@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -51,31 +52,18 @@ func walker(path string, d os.DirEntry, err error) error {
 	return nil
 }
 
-func main() {
+func processRepository(writer io.Writer, repository string) error {
 
-	hostname, _ := os.Hostname()
-
-	outFile, _ := os.Create(hostname +".csv")
-	defer outFile.Close()
-
-	args := os.Args
-
-	if len(args) == 1 {
-		fmt.Println("Please provide a repository name.")
-		os.Exit(1)
-	}
-
-	repository := args[1]
-
-	temp, _ := ioutil.TempDir("", "test")
+	temp, _ := ioutil.TempDir("", "repository")
 	defer os.RemoveAll(temp)
 	git.PlainClone(temp, false, &git.CloneOptions{
 		URL:   "https://github.com/" + repository,
 		Depth: 1,
 	})
 	filepath.WalkDir(temp, walker)
-	for k, v := range languageCountMap {
-		fmt.Fprintf(outFile, "%v,%v\n", k, v)
-	}
+	jsonString, _ := json.Marshal(languageCountMap)
 
+	fmt.Fprintln(writer, string(jsonString))
+
+	return nil
 }
