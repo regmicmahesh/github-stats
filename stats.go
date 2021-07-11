@@ -10,9 +10,10 @@ import (
 	"path/filepath"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/patrickmn/go-cache"
 )
 
-var languageCountMap = make(map[string]int)
+var languageCountMap map[string]int
 
 func lineCounter(r io.Reader) (int, error) {
 	buf := make([]byte, 128*1024)
@@ -61,9 +62,12 @@ func processRepository(writer io.Writer, repository string) error {
 		Depth: 1,
 	})
 	filepath.WalkDir(temp, walker)
-	jsonString, _ := json.Marshal(languageCountMap)
+	jsonBytes, _ := json.Marshal(languageCountMap)
 
-	fmt.Fprintln(writer, string(jsonString))
+	jsonString := string(jsonBytes)
 
+	fmt.Println("k cha")
+	c.Set(repository, jsonString, cache.DefaultExpiration)
+	fmt.Fprintln(writer, jsonString)
 	return nil
 }

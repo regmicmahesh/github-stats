@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/patrickmn/go-cache"
 )
 
 type RequestBody struct {
@@ -15,7 +18,10 @@ type ErrorBody struct {
 	ErrorMessage string `json:"error"`
 }
 
+var c *cache.Cache
+
 func handler(w http.ResponseWriter, r *http.Request) {
+	languageCountMap = map[string]int{}
 	w.Header().Add("Content-Type", "application/json")
 
 	var p RequestBody
@@ -31,10 +37,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if resp, found := c.Get(p.Repository); found {
+		jsonString := resp.(string)
+		fmt.Println("found cache")
+		fmt.Fprintln(w, jsonString)
+		return;
+	}
 	processRepository(w, p.Repository)
 }
 
 func main() {
+
+	c = cache.New(5*time.Minute, 10*time.Minute)
 
 	port := os.Getenv("PORT")
 
@@ -44,7 +58,7 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
-	fmt.Println("Server running at 0.0.0.0:"+port);
+	fmt.Println("Server running at 0.0.0.0:" + port)
 
 	http.ListenAndServe(":"+port, nil)
 
