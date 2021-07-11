@@ -53,11 +53,16 @@ func walker(path string, d os.DirEntry, err error) error {
 
 func main() {
 
+	hostname, _ := os.Hostname()
+
+	outFile, _ := os.Create(hostname +".csv")
+	defer outFile.Close()
+
 	args := os.Args
 
 	if len(args) == 1 {
-		fmt.Println("Please provide a repository name.");
-		os.Exit(1);
+		fmt.Println("Please provide a repository name.")
+		os.Exit(1)
 	}
 
 	repository := args[1]
@@ -70,7 +75,7 @@ func main() {
 	})
 	filepath.WalkDir(temp, walker)
 	for k, v := range languageCountMap {
-		fmt.Println(k, v)
+		fmt.Fprintf(outFile, "%v,%v\n", k, v)
 	}
 
 }
